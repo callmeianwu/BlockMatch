@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Blast - Retro Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.05) 2px, rgba(255, 255, 255, 0.05) 4px);
+            text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff;
+        }
+        
+        h1 {
+            color: #ffff00;
+            font-size: 24px;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .game-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #111;
+            padding: 15px;
+            border-radius: 0;
+            box-shadow: 
+                0 0 0 4px #00ffff,
+                0 0 0 8px #ff00ff,
+                10px 10px 0px #ffff00;
+            border: 4px solid #fff;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #000;
+            border: 2px solid #ffff00;
+        }
+        
+        .score, .level, .timer {
+            font-size: 12px;
+            color: #0f0;
+            text-shadow: 2px 2px 0px #090;
+        }
+        
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 4px;
+            margin: 0 auto;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #000;
+            border: 4px solid #fff;
+            padding: 4px;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        
+        .block {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 
+                inset 2px 2px 0px rgba(255, 255, 255, 0.5),
+                inset -2px -2px 0px rgba(0, 0, 0, 0.5);
+            image-rendering: pixelated;
+        }
+        
+        .block:hover {
+            transform: scale(0.9);
+            box-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 15px #fff;
+        }
+        
+        .block.selected {
+            transform: scale(0.8);
+            box-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 15px #fff,
+                0 0 20px #ff00ff,
+                0 0 30px #ff00ff;
+        }
+        
+        .block.popping {
+            animation: pop 0.3s forwards;
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #ffff00;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #00ffff;
+            text-transform: uppercase;
+            transition: all 0.1s;
+        }
+        
+        button:hover {
+            background-color: #222;
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #00ffff;
+        }
+        
+        button:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #ffff00;
+            font-size: 20px;
+            display: none;
+            text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff;
+            animation: crt-flicker 5s infinite;
+            border: 4px dashed #ffff00;
+        }
+        
+        @keyframes crt-flicker {
+            0% { opacity: 1; }
+            3% { opacity: 0.8; }
+            6% { opacity: 1; }
+            7% { opacity: 0.9; }
+            9% { opacity: 1; }
+            30% { opacity: 1; }
+            50% { opacity: 0.9; }
+            65% { opacity: 1; }
+            97% { opacity: 0.9; }
+            100% { opacity: 1; }
+        }
+        
+        .game-over h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ff0;
+            text-transform: uppercase;
+            animation: game-over-blink 0.8s infinite;
+        }
+        
+        @keyframes game-over-blink {
+            0% { color: #ff0; }
+            50% { color: #f00; }
+            100% { color: #ff0; }
+        }
+        
+        .game-over button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: 4px solid #ffff00;
+            background-color: #f00;
+            color: #fff;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.15;
+        }
+        
+        .game-container::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 11;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Block Blast</h1>
+        <div class="game-info">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="level">Level: <span id="level">1</span></div>
+            <div class="timer">Time: <span id="time">60</span>s</div>
+        </div>
+        <div id="game-board" style="position: relative;">
+            <div class="game-over" id="game-over">
+                <h2>Game Over!</h2>
+                <div>Final Score: <span id="final-score">0</span></div>
+                <button id="restart-button">Play Again</button>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="hint-button">Hint</button>
+            <button id="shuffle-button">Shuffle</button>
+        </div>
+    </div>
+
+    <script>
+        const boardSize = 8;
+        const colors = ['#ff0066', '#33ff00', '#00ccff', '#ffcc00', '#cc00ff', '#ff3300'];
+        let score = 0;
+        let level = 1;
+        let timeLeft = 60;
+        let timer;
+        let selectedBlocks = [];
+        let blocks = [];
+        let gameActive = true;
+        
+        const gameBoard = document.getElementById('game-board');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const timeDisplay = document.getElementById('time');
+        const hintButton = document.getElementById('hint-button');
+        const shuffleButton = document.getElementById('shuffle-button');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+        
+        function initGame() {
+            gameActive = true;
+            score = 0;
+            level = 1;
+            timeLeft = 60;
+            updateUI();
+            createBoard();
+            startTimer();
+            gameOverScreen.style.display = 'none';
+        }
+        
+        function createBoard() {
+            gameBoard.innerHTML = '';
+            blocks = [];
+            
+            for (let row = 0; row < boardSize; row++) {
+                blocks[row] = [];
+                for (let col = 0; col < boardSize; col++) {
+                    const colorIndex = Math.floor(Math.random() * colors.length);
+                    const block = document.createElement('div');
+                    block.className = 'block';
+                    block.style.backgroundColor = colors[colorIndex];
+                    block.dataset.row = row;
+                    block.dataset.col = col;
+                    block.dataset.color = colors[colorIndex];
+                    
+                    block.addEventListener('click', () => {
+                        if (!gameActive) return;
+                        // Add click sound
+                        playSound('click');
+                        handleBlockClick(row, col);
+                    });
+                    
+                    gameBoard.appendChild(block);
+                    blocks[row][col] = {
+                        element: block,
+                        color: colors[colorIndex]
+                    };
+                }
+            }
+            
+            gameBoard.appendChild(gameOverScreen);
+            
+            if (!hasValidMoves()) {
+                shuffleBoard();
+            }
+        }
+        
+        function handleBlockClick(row, col) {
+            const block = blocks[row][col];
+            
+            if (selectedBlocks.length === 0) {
+                selectedBlocks.push({row, col});
+                block.element.classList.add('selected');
+                return;
+            }
+            
+            const firstBlock = selectedBlocks[0];
+            
+            if (firstBlock.row === row && firstBlock.col === col) {
+                block.element.classList.remove('selected');
+                selectedBlocks = [];
+                return;
+            }
+            
+            if (blocks[firstBlock.row][firstBlock.col].color === block.color) {
+                if (canConnect(firstBlock.row, firstBlock.col, row, col)) {
+                    block.element.classList.add('selected');
+                    selectedBlocks.push({row, col});
+                    
+                    setTimeout(() => {
+                        playSound('match');
+                        popBlocks(selectedBlocks);
+                        selectedBlocks = [];
+                    }, 200);
+                } else {
+                    blocks[firstBlock.row][firstBlock.col].element.classList.remove('selected');
+                    selectedBlocks = [{row, col}];
+                    block.element.classList.add('selected');
+                }
+            } else {
+                blocks[firstBlock.row][firstBlock.col].element.classList.remove('selected');
+                selectedBlocks = [{row, col}];
+                block.element.classList.add('selected');
+            }
+        }
+        
+        function canConnect(row1, col1, row2, col2) {
+            if (Math.abs(row1 - row2) + Math.abs(col1 - col2) === 1) {
+                return true;
+            }
+            
+            if (row1 === row2 || col1 === col2) {
+                if (row1 === row2) { 
+                    const startCol = Math.min(col1, col2);
+                    const endCol = Math.max(col1, col2);
+                    
+                    for (let col = startCol + 1; col < endCol; col++) {
+                        if (blocks[row1][col].color !== null) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else { 
+                    const startRow = Math.min(row1, row2);
+                    const endRow = Math.max(row1, row2);
+                    
+                    for (let row = startRow + 1; row < endRow; row++) {
+                        if (blocks[row][col1].color !== null) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        function popBlocks(selectedBlocks) {
+            selectedBlocks.forEach(({row, col}) => {
+                blocks[row][col].element.classList.add('popping');
+            });
+            
+            setTimeout(() => {
+                selectedBlocks.forEach(({row, col}) => {
+                    blocks[row][col].color = null;
+                    blocks[row][col].element.style.backgroundColor = 'transparent';
+                    blocks[row][col].element.classList.remove('popping', 'selected');
+                });
+                
+                updateScore(selectedBlocks.length);
+                
+                dropBlocks();
+                
+                fillEmptySpaces();
+                
+                if (!hasValidMoves()) {
+                    shuffleBoard();
+                    playSound('shuffle');
+                }
+            }, 300);
+        }
+        
+        function updateScore(numBlocks) {
+            const baseScore = numBlocks * 10;
+            const bonus = numBlocks > 2 ? (numBlocks - 2) * 5 : 0;
+            const pointsEarned = baseScore + bonus;
+            
+            score += pointsEarned;
+            
+            if (Math.floor(score / 100) > level - 1) {
+                levelUp();
+            }
+            
+            updateUI();
+        }
+        
+        // Level up
+        function levelUp() {
+            level++;
+            timeLeft += 30; 
+            playSound('levelup');
+            updateUI();
+        }
+        
+        function updateUI() {
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+            timeDisplay.textContent = timeLeft;
+        }
+        
+        function dropBlocks() {
+            for (let col = 0; col < boardSize; col++) {
+                let emptySpaces = 0;
+                
+                for (let row = boardSize - 1; row >= 0; row--) {
+                    if (blocks[row][col].color === null) {
+                        emptySpaces++;
+                    } else if (emptySpaces > 0) {
+                        const newRow = row + emptySpaces;
+                        blocks[newRow][col].color = blocks[row][col].color;
+                        blocks[newRow][col].element.style.backgroundColor = blocks[row][col].color;
+                        
+                        blocks[row][col].color = null;
+                        blocks[row][col].element.style.backgroundColor = 'transparent';
+                    }
+                }
+            }
+        }
+        
+        function fillEmptySpaces() {
+            for (let col = 0; col < boardSize; col++) {
+                for (let row = 0; row < boardSize; row++) {
+                    if (blocks[row][col].color === null) {
+                        const colorIndex = Math.floor(Math.random() * colors.length);
+                        blocks[row][col].color = colors[colorIndex];
+                        blocks[row][col].element.style.backgroundColor = colors[colorIndex];
+                    }
+                }
+            }
+        }
+        
+        function hasValidMoves() {
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize - 1; col++) {
+                    if (blocks[row][col].color === blocks[row][col + 1].color) {
+                        return true;
+                    }
+                }
+            }
+            
+            for (let col = 0; col < boardSize; col++) {
+                for (let row = 0; row < boardSize - 1; row++) {
+                    if (blocks[row][col].color === blocks[row + 1][col].color) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        function shuffleBoard() {
+            const allColors = [];
+            
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (blocks[row][col].color !== null) {
+                        allColors.push(blocks[row][col].color);
+                    }
+                }
+            }
+            
+            for (let i = allColors.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allColors[i], allColors[j]] = [allColors[j], allColors[i]];
+            }
+            
+            let index = 0;
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (blocks[row][col].color !== null) {
+                        blocks[row][col].color = allColors[index];
+                        blocks[row][col].element.style.backgroundColor = allColors[index];
+                        index++;
+                    }
+                }
+            }
+        }
+        
+        function showHint() {
+            selectedBlocks.forEach(({row, col}) => {
+                blocks[row][col].element.classList.remove('selected');
+            });
+            selectedBlocks = [];
+            
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (col < boardSize - 1) {
+                        if (blocks[row][col].color === blocks[row][col + 1].color) {
+                            highlightHint(row, col, row, col + 1);
+                            return;
+                        }
+                    }
+                    
+                    if (row < boardSize - 1) {
+                        if (blocks[row][col].color === blocks[row + 1][col].color) {
+                            highlightHint(row, col, row + 1, col);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        
+        function highlightHint(row1, col1, row2, col2) {
+            blocks[row1][col1].element.classList.add('selected');
+            blocks[row2][col2].element.classList.add('selected');
+            
+            playSound('hint');
+            
+            setTimeout(() => {
+                blocks[row1][col1].element.classList.remove('selected');
+                blocks[row2][col2].element.classList.remove('selected');
+            }, 1000);
+        }
+        
+        function startTimer() {
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                updateUI();
+                
+                if (timeLeft <= 10 && timeLeft > 0) {
+                    playSound('tick');
+                }
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        function endGame() {
+            clearInterval(timer);
+            gameActive = false;
+            gameOverScreen.style.display = 'flex';
+            finalScoreDisplay.textContent = score;
+            playSound('gameover');
+        }
+        
+        function playSound(type) {
+            console.log(`Playing sound: ${type}`);
+            
+        }
+        
+        hintButton.addEventListener('click', () => {
+            if (!gameActive) return;
+            showHint();
+        });
+        
+        shuffleButton.addEventListener('click', () => {
+            if (!gameActive) return;
+            shuffleBoard();
+            playSound('shuffle');
+        });
+        
+        restartButton.addEventListener('click', () => {
+            initGame();
+        });
+        
+        initGame();
+    </script>
+</body>
+</html>
