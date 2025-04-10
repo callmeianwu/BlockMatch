@@ -537,6 +537,7 @@
         }
         
         function showHint() {
+            timeLeft -= 5;
             selectedBlocks.forEach(({row, col}) => {
                 blocks[row][col].element.classList.remove('selected');
             });
